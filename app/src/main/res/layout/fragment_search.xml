@@ -1,0 +1,46 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.example.radibarq.pokemongotradecenter.Search"
+    android:background="@color/colorBase"
+    >
+
+    <Spinner
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/spinner2"
+        android:entries="@array/pokemons"
+        android:backgroundTint="@color/colorAccent"
+        android:layout_below="@+id/imageView3"
+        android:layout_alignStart="@+id/imageView2"
+        android:layout_marginTop="38dp"
+        android:layout_gravity="center_horizontal|top"
+        android:layout_margin = "50dp"
+
+        />
+
+    <Button
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="87dp"
+        android:layout_height="wrap_content"
+        android:text="Search"
+        android:id="@+id/button2"
+        android:textColor="@color/colorBase"
+        android:background="@color/colorAccent"
+        android:layout_gravity="center"
+        android:onClick="onClickSearch"
+        />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/imageView5"
+        android:layout_below="@+id/textView"
+        android:layout_centerHorizontal="true"
+        android:layout_gravity="center_horizontal|top"
+        android:layout_margin="20dp"
+        android:text="Pick A Pokemon"
+        android:textAppearance="@android:style/TextAppearance.Material.Large" />
+
+</FrameLayout>

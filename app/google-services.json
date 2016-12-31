@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "159482289289",
+    "firebase_url": "https://pokemongotradecenter-b009d.firebaseio.com",
+    "project_id": "pokemongotradecenter-b009d",
+    "storage_bucket": "pokemongotradecenter-b009d.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:159482289289:android:9220fdd08d82bbf8",
+        "android_client_info": {
+          "package_name": "com.example.radibarq.pokemongotradecenter"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "159482289289-mgcgqui4q1btm90a6k43iv8tq8e5p9fv.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCi0mnRTztcp76DmQMZMRHbBhc6tUEbMqc"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

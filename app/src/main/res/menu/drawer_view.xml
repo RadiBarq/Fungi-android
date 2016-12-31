@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+
+    <group android:checkableBehavior="single">
+
+        <item
+            android:id="@+id/nav_first_fragment"
+            android:icon="@drawable/ic_explore_white_24dp"
+            android:title="Nearby Pokemons" />
+
+
+        <item
+            android:id="@+id/nav_fifth_fragment"
+            android:icon = "@drawable/ic_face_white_24dp"
+            android:title="My Pokemons"/>
+
+        <item
+            android:id = "@+id/nav_fourth_fragment"
+            android:icon="@drawable/ic_message_white_24dp"
+            android:title = "Messages"
+            />
+
+        <item
+            android:id="@+id/nav_third_fragment"
+            android:icon="@drawable/ic_keyboard_backspace_white_24dp"
+            android:title="Logout"
+            />
+
+
+
+    </group>
+
+</menu>
