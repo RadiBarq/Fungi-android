@@ -28,10 +28,12 @@ import android.view.ContextMenu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListAdapter;
 import android.widget.ListView;
+import android.widget.RelativeLayout;
 import android.widget.SimpleAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -39,6 +41,10 @@ import android.location.LocationListener;
 import com.firebase.client.DataSnapshot;
 import com.firebase.client.FirebaseError;
 import com.firebase.geofire.GeoFire;
+import com.firebase.geofire.GeoLocation;
+import com.firebase.geofire.GeoQuery;
+import com.firebase.geofire.GeoQueryEventListener;
+import com.google.android.gms.vision.text.Text;
 import com.google.firebase.auth.api.model.StringList;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -58,14 +64,19 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.lang.Math;
 import java.util.Objects;
 
 import com.google.firebase.database.GenericTypeIndicator;
 import com.google.firebase.database.ValueEventListener;
 
-public class MainActivity extends AppCompatActivity implements Search.OnFragmentInteractionListener, TradeCenter.OnFragmentInteractionListener, FragmentClicked.OnFragmentInteractionListener, MessagesFragment.OnFragmentInteractionListener {
+public class MainActivity extends AppCompatActivity implements Search.OnFragmentInteractionListener, TradeCenter.OnFragmentInteractionListener, FragmentClicked.OnFragmentInteractionListener, MessagesFragment.OnFragmentInteractionListener{
 
     private DrawerLayout mDrawer;
     private Toolbar toolbar;
@@ -73,9 +84,8 @@ public class MainActivity extends AppCompatActivity implements Search.OnFragment
     private ActionBarDrawerToggle drawerToggle;
     Fragment fragment;
     ArrayList<HashMap<String, String>> messages;
-
-
     int index;
+    TextView textViewInformNoNearby;
     private ProgressDialog pDialog;
     JSONArray peoples = null;
     //SwipeRefreshLayout mSwipeRefreshLayout;
@@ -84,38 +94,36 @@ public class MainActivity extends AppCompatActivity implements Search.OnFragment
     ArrayList<HashMap<String, String>> personList;
     ArrayList<HashMap<String, String>> pokemons;
     ListAdapter adapter;
-
     // There is using whe the user click one of the list item.
     String displayName;
     static String uniqueKey;
     FloatingActionButton fab;
-
+    int currentScrollIndex;
     int oneTimeCounter= 0 ;
-
-
     String removedUser;
     String removedMessageId;
-
-
     ListView list;
     int CHEKER = 0;
+    int tablePokemonNumber = 0;
+    int tablePreviousNumber = 0;
     int pokemonDrawableId;
+    final double maxrRidus = 14.0;
     DatabaseReference myRef;
     DatabaseReference currentUserReference;
-
     public static User currentUser;
-
     LocationManager locationManager;
-
     String sLocation;
-
+    boolean isTheBegining;
     int counter;
-
+    double radius;
     DatabaseReference updateLocationRef;
+    boolean reachedEndOfTable;
+    String latitude;
+    HashMap <String, String> pokemon;
+    String longitude;
 
-
-
-
+    List<String> keys = new ArrayList<String>();
+    int keysCounter = 0;
 
     // Pokemon drawable id array
     Integer[] flags = new Integer[]{
@@ -274,95 +282,66 @@ public class MainActivity extends AppCompatActivity implements Search.OnFragment
             R.drawable.zapdos,
             R.drawable.zubat
     };
-
     FirebaseDatabase database;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
         counter = 0;
-
+        radius = 0.2;
+        reachedEndOfTable = true;
         /// Related to the diaglog
         pDialog = new ProgressDialog(MainActivity.this);
         pDialog.setMessage("Loading Pokemons Nearby...");
         pDialog.setIndeterminate(false);
         pDialog.setCancelable(true);
+        isTheBegining = true;
         pDialog.show();
-
         database = FirebaseDatabase.getInstance();
-
         currentUser = new User();
-
         // Set a Toolbar to replace the ActionBar
         toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-
         // We use this to initailizd fragment when delete it.
         fragmentClass = FragmentClicked.class;
-
         try {
             fragment = (Fragment) fragmentClass.newInstance();
         } catch (Exception e) {
             e.printStackTrace();
         }
-
-
         locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
-
         updateLocationRef = database.getInstance().getReference("Pokemons");
-
-
         oneTimeCounter = 0;
-
-
-
         LocationListener locationListener = new LocationListener() {
 
             public void onLocationChanged(final Location location) {
-
-                //TODO
-
-
                 // to check weather the it's nearby pokemon or messages
                 if (counter == 0) {
 
-
-
-
                 sLocation = String.valueOf(location.getLatitude()) + " " + String.valueOf(location.getLongitude());
-
+                latitude = String.valueOf(location.getLatitude());
+                longitude = String.valueOf(location.getLongitude());
 
                 myRef.removeEventListener(postListener);
-
                 updateLocationRef.addListenerForSingleValueEvent(new ValueEventListener() {
 
                     @Override
                     public void onDataChange(com.google.firebase.database.DataSnapshot dataSnapshot) {
                         // Let's see what we can do right now fellow
                         String key;
-
-
                         for (com.google.firebase.database.DataSnapshot child : dataSnapshot.getChildren()) {
-
                             // This is to get the key.
-
                             key = child.getKey().toString();
-
-
                             // Let's see what to do here
                             if (child.child("PublicName").getValue().toString().matches(LoginActivity.user.displayName)) {
                                 updateLocationRef.child(key).child("Location").setValue(sLocation);
                                 oneTimeCounter = 1;
-
                             }
-
                         }
-
-                        myRef.addValueEventListener(postListener);
-
+                        //myRef.addValueEventListener(postListener);
                     }
 
                     @Override
@@ -371,7 +350,7 @@ public class MainActivity extends AppCompatActivity implements Search.OnFragment
                     }
                 });
 
-            }
+                }
             }
 
             @Override
@@ -393,7 +372,6 @@ public class MainActivity extends AppCompatActivity implements Search.OnFragment
             }
         };
 
-
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             // TODO: Consider calling
             //    ActivityCompat#requestPermissions
@@ -407,37 +385,25 @@ public class MainActivity extends AppCompatActivity implements Search.OnFragment
 
         locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, locationListener);
 
-
         // mSwipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.activity_main_swipe_refresh_layout);
         //mSwipeRefreshLayout.setColorSchemeResources(R.color.colorPrimary, R.color.colorAccent, R.color.colorPrimaryDark);
-
-
         myRef = database.getInstance().getReference("Pokemons");
 
+        Location location = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+        sLocation = String.valueOf(location.getLatitude()) + " " + String.valueOf(location.getLongitude());
+        longitude = String.valueOf(location.getLongitude());
+        latitude = String.valueOf(location.getLatitude());
 
 
-        GeoFire geoFire = new GeoFire(myRef);
-
-
-
-
-
-
-
-
+        // This is to populate pokemons to the list...
+        populatePokemons();
 
 
         currentUserReference = database.getReference("Users");
-
         pokemons = new ArrayList<HashMap<String, String>>();
-
         //getData();
-
         list = (ListView) findViewById(R.id.list);
-
-        myRef.addValueEventListener(postListener);
-
-
+       // myRef.addValueEventListener(postListener);
         list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
 
                 @Override
@@ -453,6 +419,35 @@ public class MainActivity extends AppCompatActivity implements Search.OnFragment
         });
 
 
+        list.setOnScrollListener(new AbsListView.OnScrollListener() {
+
+            @Override
+            public void onScrollStateChanged(AbsListView view, int scrollState) {
+                if (scrollState == AbsListView.OnScrollListener.SCROLL_STATE_IDLE) {
+                }
+            }
+
+            @Override
+            public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
+
+                if (totalItemCount - visibleItemCount == firstVisibleItem && totalItemCount > 4) {
+
+                    if (reachedEndOfTable && radius < maxrRidus)
+                    {
+                        radius = radius + 0.2;
+                        pokemons = new ArrayList<HashMap<String, String>>();
+                        reachedEndOfTable = false;
+                        populatePokemons();
+                    }
+
+                }
+
+                if (firstVisibleItem == 0) {
+                    //first item visible
+                }
+            }
+        });
+
        //fragmentClass = Search.class;
         //try {
         // fragment = (Fragment) fragmentClass.newInstance();
@@ -463,25 +458,33 @@ public class MainActivity extends AppCompatActivity implements Search.OnFragment
         // e.printStackTrace();
 
 
-        // }
+        //}
+
+
+        // Creating text view to inform the user there is no pokemons nearby...remember that very well
+        textViewInformNoNearby = (TextView)findViewById(R.id.noPokemonsTextView);
+        textViewInformNoNearby.setVisibility(View.GONE);
+        textViewInformNoNearby.setPadding(10, 10, 10, 10);
+        textViewInformNoNearby.setText("There Is No Nearby Pokemons Please Check Out Later");
+        textViewInformNoNearby.setTextColor(getResources().getColor(R.color.colorPrimary));
+        textViewInformNoNearby.setTextSize(22);
+        textViewInformNoNearby.setPadding(20, 300, 20, 10);
+
 
 
         // Insert the fragment by replacing any existing fragment
         // android.support.v4.app.FragmentManager fragmentManager = getSupportFragmentManager();
 //        f//ragmentManager.beginTransaction().replace(R.id.flContent, fragment).commit();
 
-
         // Find our drawer view
         mDrawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawerToggle = setupDrawerToggle();
-
         // Tie DrawerLayout events to the ActionBarToggle
         mDrawer.addDrawerListener(drawerToggle);
         // ...From section above...
         // Find our drawer view
         nvDrawer = (NavigationView) findViewById(R.id.nvView);
         // Setup drawer view
-
         setupDrawerContent(nvDrawer);
         drawerToggle.syncState();
 
@@ -501,7 +504,6 @@ public class MainActivity extends AppCompatActivity implements Search.OnFragment
         // });
 
         fab = (FloatingActionButton) findViewById(R.id.fab);
-
         fab.setOnClickListener(new View.OnClickListener() {
 
             @Override
@@ -509,17 +511,12 @@ public class MainActivity extends AppCompatActivity implements Search.OnFragment
 
                 Intent intent = new Intent(MainActivity.this, AddPokemon.class);
                 startActivity(intent);
-
-
-
                 //Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
                 //.setAction("Action", null).show();
-
             }
         });
 
         personList = new ArrayList<HashMap<String, String>>();
-
     }
 
     private void setupDrawerContent(NavigationView navigationView) {
@@ -527,12 +524,66 @@ public class MainActivity extends AppCompatActivity implements Search.OnFragment
                 new NavigationView.OnNavigationItemSelectedListener() {
                     @Override
                     public boolean onNavigationItemSelected(MenuItem menuItem) {
+
                         selectDrawerItem(menuItem);
                         return true;
                     }
                 });
+    }
+
+
+
+
+
+    void populatePokemons()
+    {
+        DatabaseReference geoFireRef = FirebaseDatabase.getInstance().getReference("Pokemons Location");
+        pDialog.show();
+        final GeoFire geoFire = new GeoFire(geoFireRef);
+        GeoQuery geoQuery = geoFire.queryAtLocation(new GeoLocation(Float.parseFloat(latitude), Float.parseFloat(longitude)), radius);
+
+        geoQuery.addGeoQueryEventListener(new GeoQueryEventListener() {
+
+            @Override
+            public void onKeyEntered(String key, GeoLocation location) {
+
+                FirebaseDatabase database = FirebaseDatabase.getInstance();
+
+                keys.add(key);
+
+                DatabaseReference geoFireRef = database.getInstance().getReference("Pokemons").child(key);
+
+                geoFireRef.addListenerForSingleValueEvent(postListenerGeoFire); // we want to play in this watar
+
+                System.out.println(String.format("Key %s entered the search area at [%f,%f]", key, location.latitude, location.longitude));
+            }
+
+            @Override
+            public void onKeyExited(String key) {
+                System.out.println(String.format("Key %s is no longer in the search area", key));
+            }
+
+            @Override
+            public void onKeyMoved(String key, GeoLocation location) {
+                System.out.println(String.format("Key %s moved within the search area to [%f,%f]", key, location.latitude, location.longitude));
+            }
+
+            @Override
+            public void onGeoQueryReady() {
+
+//                list.setAdapter(adapter);
+                System.out.println("All initial data has been loaded and events have been fired!");
+
+            }
+
+            @Override
+            public void onGeoQueryError(DatabaseError error) {
+                System.err.println("There was an error with this query: " + error);
+            }
+        });
 
     }
+
 
         ValueEventListener postListener1 = new ValueEventListener() {
 
@@ -569,7 +620,6 @@ public class MainActivity extends AppCompatActivity implements Search.OnFragment
 
                     android.support.v4.app.FragmentManager fragmentManager = getSupportFragmentManager();
                     fragmentManager.beginTransaction().hide(fragment).commit();
-
                     fragmentManager.beginTransaction().replace(R.id.flContent1, fragment).commit();
                 }
            }
@@ -580,6 +630,7 @@ public class MainActivity extends AppCompatActivity implements Search.OnFragment
 
         }
     };
+
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -595,9 +646,6 @@ public class MainActivity extends AppCompatActivity implements Search.OnFragment
 
     public void selectDrawerItem(MenuItem menuItem) {
         // Create a new fragment and specify the fragment to show based on nav item clicked
-
-
-
         switch (menuItem.getItemId()) {
 
             case R.id.nav_first_fragment:
@@ -698,11 +746,8 @@ public class MainActivity extends AppCompatActivity implements Search.OnFragment
 
     ValueEventListener postListener6 = new ValueEventListener() {
 
-
         @Override
         public void onDataChange(com.google.firebase.database.DataSnapshot dataSnapshot) {
-
-
 
         }
 
@@ -734,12 +779,9 @@ public class MainActivity extends AppCompatActivity implements Search.OnFragment
         }
     }
 
-
-
     private ActionBarDrawerToggle setupDrawerToggle() {
 
         return new ActionBarDrawerToggle(this, mDrawer, toolbar, R.string.drawer_open, R.string.drawer_close);
-
     }
 
     @Override
@@ -750,18 +792,11 @@ public class MainActivity extends AppCompatActivity implements Search.OnFragment
     }
 
     ValueEventListener postListener = new ValueEventListener() {
-
-
-
         @Override
         public void onDataChange(com.google.firebase.database.DataSnapshot dataSnapshot) {
 
-            pokemons = new ArrayList<HashMap<String, String>>();
-
-
+                pokemons = new ArrayList<HashMap<String, String>>();
                 index = list.getFirstVisiblePosition();
-
-
 
             for (com.google.firebase.database.DataSnapshot child : dataSnapshot.getChildren())
             {
@@ -785,9 +820,11 @@ public class MainActivity extends AppCompatActivity implements Search.OnFragment
                 pokemons.add(pokemon);
             }
 
+
+
+
             pDialog.dismiss();
            // mSwipeRefreshLayout.setRefreshing(false);
-
 
              adapter = new SimpleAdapter(
                     MainActivity.this, pokemons, R.layout.list_item,
@@ -797,22 +834,149 @@ public class MainActivity extends AppCompatActivity implements Search.OnFragment
 
             list.setAdapter(adapter);
             list.setSelection(index);
-
         }
 
         @Override
         public void onCancelled(DatabaseError databaseError) {
-
 
         }
 
     };
 
 
+
+    ValueEventListener postListenerGeoFire = new ValueEventListener() {
+
+        int checker = 0;
+        @Override
+        public void onDataChange(com.google.firebase.database.DataSnapshot dataSnapshot) {
+
+            checker = 0;
+            pokemon = new HashMap<String, String>();
+            pokemon.put("Id" ,keys.get(counter));
+            counter++;
+
+            for (com.google.firebase.database.DataSnapshot child: dataSnapshot.getChildren())
+            {
+                if (child.getKey().toString().matches("PublicName") && child.getValue().toString().matches(LoginActivity.user.displayName))
+                {
+                    checker = 1;
+                    break;
+                }
+
+                if (child.getKey().toString().matches("Location"))
+                {
+                    String[] coordinates = child.getValue().toString().split(" ");
+                    String stringDistance;
+
+                    double distance = calculateDistance(Double.parseDouble(coordinates[0]), Double.parseDouble(coordinates[1]), Double.parseDouble(latitude), Double.parseDouble(longitude), "k");
+
+                    double fakeDistance = distance;
+                    
+                    pokemon.put("distance", String.valueOf((float) fakeDistance * 1000));
+
+                    if (distance >= 1) {
+
+                        stringDistance = String.valueOf((float) distance) + " km";
+                    }
+
+                    else
+                    {
+                        distance = distance * 1000;
+                        stringDistance = String.valueOf((float) (distance)) + " m";
+                    }
+
+                    pokemon.put(child.getKey(), stringDistance);
+
+                    continue;
+                }
+
+                pokemon.put(child.getKey(), child.getValue().toString());
+
+                // To the photo name to the list
+                if (child.getKey().matches("Pokemon"))
+                {
+                    pokemon.put("Flag", Integer.toString(choosePokemon(child.getValue().toString())));
+
+                }
+
+            }
+
+            if (checker == 0)
+            {
+
+                pokemons.add(pokemon);
+
+            }
+
+            if (counter == keys.size()) {
+
+                    // When tere are no pokemons nearby...
+                    // This code to sort the pokemons list
+                    tablePokemonNumber = pokemons.size();
+
+                    if (tablePokemonNumber - tablePreviousNumber < 5 && radius < maxrRidus)
+                    {
+                        radius = radius + 0.2;
+                        pokemons = new ArrayList<HashMap<String, String>>();
+                        populatePokemons();
+
+                    }
+
+                else {
+                        tablePreviousNumber = tablePokemonNumber;
+                        pDialog.dismiss();
+
+                        Collections.sort(pokemons, new Comparator<Map<String, String>>() {
+
+                            @Override
+                            public int compare(Map<String, String> lhs,
+                                               Map<String, String> rhs) {
+                                //      Do your comparison logic here and retrn accordingly.
+
+                                float firstValue = Float.parseFloat(lhs.get("distance"));
+                                float secondValue = Float.parseFloat(rhs.get("distance"));
+                                return Float.compare(firstValue, secondValue);
+                            }
+                        });
+
+
+                        adapter = new SimpleAdapter(
+                                MainActivity.this, pokemons, R.layout.list_item,
+                                new String[]{"Id", "Pokemon", "Location", "PublicName", "Cp", "Flag"},
+                                new int[]{R.id.id, R.id.description, R.id.likes, R.id.date, R.id.area, R.id.thumbnail}
+                        );
+
+
+                        index = list.getFirstVisiblePosition();
+                        list.setAdapter(adapter);
+
+                        // to ensure not the begining the activitt
+                        if (isTheBegining == false) {
+
+                            list.setSelection(index + 1);
+                        }
+
+                        isTheBegining = false;
+                        list.setEmptyView(textViewInformNoNearby);
+                        reachedEndOfTable = true;
+
+                    }
+            }
+
+        }
+
+        @Override
+        public void onCancelled(DatabaseError databaseError) {
+
+        }
+    };
+
+
+
    ValueEventListener postListener4 = new ValueEventListener() {
 
         int checker  = 0;
-
         @Override
         public void onDataChange(com.google.firebase.database.DataSnapshot dataSnapshot) {
 
@@ -820,7 +984,6 @@ public class MainActivity extends AppCompatActivity implements Search.OnFragment
             {
                 HashMap <String, String> pokemon = new HashMap<String, String>();
                 checker = 0;
-
                 pokemon.put("Id", child.getKey().toString());
 
                 for (com.google.firebase.database.DataSnapshot child2: child.getChildren())
@@ -843,8 +1006,10 @@ public class MainActivity extends AppCompatActivity implements Search.OnFragment
                 }
 
                 // This is a list that containts all the elements that we need..
-                if (checker == 1)
+                if (checker == 1) {
+
                     continue;
+                }
 
                 pokemons.add(pokemon);
 
@@ -853,9 +1018,7 @@ public class MainActivity extends AppCompatActivity implements Search.OnFragment
             pDialog.dismiss();
             // mSwipeRefreshLayout.setRefreshing(false);
 
-
             adapter = new SimpleAdapter(
-
                     MainActivity.this, pokemons, R.layout.list_item,
                     new String[]{"Id", "Pokemon", "Location", "PublicName", "Cp", "Flag"},
                     new int[]{R.id.id, R.id.description, R.id.likes, R.id.date, R.id.area, R.id.thumbnail}
@@ -871,6 +1034,7 @@ public class MainActivity extends AppCompatActivity implements Search.OnFragment
 
     };
 
+
     @Override
     public boolean areAllItemsEnabled() {
         return false;
@@ -884,13 +1048,13 @@ public class MainActivity extends AppCompatActivity implements Search.OnFragment
     // This code to populate my pokemons
     void populateMyPokemons()
     {
+
         pokemons = new ArrayList<HashMap<String, String>>();
 
         myRef.addValueEventListener(postListener4);
     }
 
     public void getData() {
-
         class GetDataJSON extends AsyncTask<String, Void, String> {
             @Override
             protected void onPreExecute() {
@@ -951,7 +1115,6 @@ public class MainActivity extends AppCompatActivity implements Search.OnFragment
 
         GetDataJSON g = new GetDataJSON();
         g.execute();
-
     }
 
     protected void showList()
@@ -996,10 +1159,7 @@ public class MainActivity extends AppCompatActivity implements Search.OnFragment
 
     private void closefragment() {
 
-
     }
-
-
 
     @Override
     public void onBackPressed()
@@ -1014,11 +1174,8 @@ public class MainActivity extends AppCompatActivity implements Search.OnFragment
     void populateMessages()
     {
         FirebaseDatabase database = FirebaseDatabase.getInstance();
-
         myRef = database.getInstance().getReference("Users").child(LoginActivity.user.displayName).child("chat");
-
         myRef.addValueEventListener(postListener2);
-
 
         list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -1026,12 +1183,9 @@ public class MainActivity extends AppCompatActivity implements Search.OnFragment
 
                 String key = ((TextView) view.findViewById(R.id.id)).getText().toString();
                 String name = ((TextView) view.findViewById(R.id.description)).getText().toString();
-
                 Chat.key = key;
                 Chat.name = name;
-
                 Chat.active = 1;
-
                 Intent intent = new Intent(MainActivity.this, Chat.class);
                 startActivity(intent);
 
@@ -1039,6 +1193,47 @@ public class MainActivity extends AppCompatActivity implements Search.OnFragment
         });
 
     }
+
+
+
+
+    private Double calculateDistance(Double lat1, Double lon1, Double lat2, Double lon2, String unit)
+    {
+
+        Double radlat1 = Math.PI * lat1 / 180;
+        Double radlat2 = Math.PI * lat2 / 180;
+        Double radlon1 = Math.PI * lon1 / 180;
+        Double radlon2 = Math.PI * lon2 / 180;
+
+        Double theta = lon1 - lon2;
+
+        Double radtheta = Math.PI * theta/180;
+
+        Double dist = Math.sin(radlat1) * Math.sin(radlat2) + Math.cos(radlat1) * Math.cos(radlat2) * Math.cos(radtheta);
+
+        dist = Math.acos(dist);
+
+        dist = dist * 180 / Math.PI;
+
+        dist = dist * 60 * 1.1515;
+
+        if (unit == "k")
+        {
+            dist = dist * 1.609344;
+
+        }
+
+        if (unit == "m")
+        {
+            dist = dist * 0.8684;
+        }
+
+        return dist;
+
+    }
+
+
+
 
     ValueEventListener postListener2 = new ValueEventListener() {
 
@@ -1072,6 +1267,15 @@ public class MainActivity extends AppCompatActivity implements Search.OnFragment
 
         }
     };
+
+
+
+    //public Comparator<Map<String, String>> mapComparator = new Comparator<Map<String, String>>() {
+      //  public int compare(Map<String, String> m1, Map<String, String> m2) {
+        //    return m1.get("distance").compareTo(m2.get("distance"));
+        //}
+    //};
+
 
 
     private Integer choosePokemon(String pokemon)
@@ -1573,6 +1777,5 @@ public class MainActivity extends AppCompatActivity implements Search.OnFragment
         }
 
         return pokemonDrawableId;
-
     }
 }

@@ -6,7 +6,6 @@ package com.example.radibarq.pokemongotradecenter;
 
 public class ChatRoom {
 
-
     ChatMessage chatMessage;
     String user;
     String currentUser;

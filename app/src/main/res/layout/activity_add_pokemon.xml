@@ -38,7 +38,7 @@
         android:text="Trade Pokemon"
         android:id="@+id/button"
         android:background="@color/colorAccent"
-        android:textColor="@color/colorBase"
+        android:textColor="@color/colorPrimary"
         android:onClick="onClickTrade"
         android:layout_marginBottom="45dp"
         android:layout_alignParentBottom="true"

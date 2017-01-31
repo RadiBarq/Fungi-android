@@ -58,6 +58,12 @@
         app:headerLayout="@layout/header"
         />
 
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="There Is No Nearby Pokemons Please Check Out Later"
+        android:id="@+id/noPokemonsTextView"
+        />
 
 
 

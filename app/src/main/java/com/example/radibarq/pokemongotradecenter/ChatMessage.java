@@ -9,13 +9,13 @@ import java.util.Date;
 public class ChatMessage {
 
     public String messageText;
-    public String messageUser;
+    public String messageFrom;
     public long messageTime;
 
-    public ChatMessage(String messageText, String messageUser)
+    public ChatMessage(String messageText, String messageFrom)
     {
         this.messageText = messageText;
-        this.messageUser = messageUser;
+        this.messageFrom = messageFrom;
         messageTime = new Date().getTime();
     }
 }

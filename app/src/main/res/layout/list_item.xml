@@ -1,35 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="116dp"
     android:background="@drawable/list_row_selector"
     >
 
     <TextView
         android:id="@+id/id"
-        android:layout_height="200dp"
+        android:layout_height="300dp"
         android:layout_width="200dp"
         android:visibility="gone"
+        android:layout_centerVertical="true"
         />
 
     <!-- Thumbnail Image -->
-    <ImageView
-        android:id="@+id/thumbnail"
-        android:layout_width="80dp"
-        android:layout_height="80dp"
-        android:layout_alignParentLeft="true"
-        android:layout_marginRight="8dp"
-        android:src="@drawable/profilepicture"
-
-        />
 
     <!-- Product id (pid) - will be HIDDEN - used to pass to other activity -->
     <TextView
         android:id="@+id/description"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignTop="@+id/thumbnail"
         android:layout_toRightOf="@+id/thumbnail"
+        android:layout_marginTop="20dp"
         android:textSize="@dimen/title"
         android:textStyle="bold"
         />
@@ -49,9 +41,10 @@
         android:id="@+id/likes"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/area"
         android:layout_marginTop="5dp"
         android:layout_toRightOf="@+id/thumbnail"
+        android:layout_marginBottom="5dp"
+        android:layout_alignParentBottom="true"
         android:textColor="@color/genre"
         android:textSize="@dimen/genre"
         />
@@ -63,9 +56,19 @@
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_alignParentRight="true"
-        android:textColor="@color/year"
+        android:textColor="@color/colorPrimary"
+        android:layout_marginBottom="5dp"
         android:textSize="@dimen/year"
         />
+
+    <ImageView
+        android:id="@+id/thumbnail"
+        android:layout_width="80dp"
+        android:layout_height="120dp"
+        android:layout_marginRight="8dp"
+        android:src="@drawable/profilepicture"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentStart="true" />
 
 
 </RelativeLayout>

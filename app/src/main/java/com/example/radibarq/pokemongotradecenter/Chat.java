@@ -9,6 +9,7 @@ import android.text.format.DateFormat;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListAdapter;
 import android.widget.ListView;
@@ -44,7 +45,7 @@ public class Chat extends AppCompatActivity {
     SimpleAdapter adapter;
     String myJSON;
     ArrayList<HashMap<String, String>> personList;
-    ArrayList<HashMap<String, String>> messages;
+    public static ArrayList<HashMap<String, String>> messages;
     JSONArray peoples = null;
     DatabaseReference myRef;
     private ProgressDialog pDialog;
@@ -56,11 +57,14 @@ public class Chat extends AppCompatActivity {
     public static int active;
     public static String key;
     public static String name;
+    MessageAdapter messageAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
+
+        messageAdapter = new MessageAdapter(this);
 
         /// Related to the diaglog
         pDialog = new ProgressDialog(Chat.this);
@@ -68,8 +72,8 @@ public class Chat extends AppCompatActivity {
         pDialog.setIndeterminate(false);
         pDialog.setCancelable(true);
         pDialog.show();
-        FloatingActionButton fab =
-                (FloatingActionButton) findViewById(R.id.fab);
+        Button fab =
+                (Button) findViewById(R.id.fab);
         listView = (ListView) findViewById(R.id.list_of_messages);
         messages = new ArrayList<HashMap<String, String>>();
         fab.setOnClickListener(new View.OnClickListener() {
@@ -83,6 +87,7 @@ public class Chat extends AppCompatActivity {
                     ChatMessage chatMessage = new ChatMessage(input.getText().toString().trim(), LoginActivity.user.displayName);
 
                     ChatRoom chatRoom = new ChatRoom(chatMessage, LoginActivity.user.displayName, MainActivity.currentUser.displayName);
+
 
                     myRef.push().setValue(chatMessage);
 
@@ -104,10 +109,8 @@ public class Chat extends AppCompatActivity {
             ActionBar actionBar = getActionBar();
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             checker = 0;
-
             FirebaseDatabase database = FirebaseDatabase.getInstance();
-            myRef = database.getInstance().getReference("Chat").child(key).child(LoginActivity.user.displayName).child(name);
-
+            myRef = database.getInstance().getReference("Users").child(LoginActivity.user.displayName).child("chat").child(name);
             myRef.addValueEventListener(postListener1);
         }
 
@@ -153,24 +156,24 @@ public class Chat extends AppCompatActivity {
                 for (com.google.firebase.database.DataSnapshot child2 : child.getChildren()) {
                     if (child2.getKey().matches("messageText")) {
                         message.put("messageText", child2.getValue().toString());
-                    } else if (child2.getKey().matches("messageUser")) {
-                        message.put("messageUser", child2.getValue().toString());
+                    } else if (child2.getKey().matches("messageFrom")) {
+                        message.put("messageFrom", child2.getValue().toString());
                     }
                 }
 
-                messages.add(message);
+               messageAdapter.addMessage(message);
             }
 
-            pDialog.dismiss();
+           pDialog.dismiss();
 
-                adapter = new SimpleAdapter(
-                        Chat.this, messages, R.layout.message,
-                        new String[]{"messageText", "messageUser"},
-                        new int[]{R.id.message_text, R.id.message_user}
-                );
+            //    adapter = new SimpleAdapter(
+              //          Chat.this, messages, R.layout.message_left,
+                ///        new String[]{"messageText", "messageFrom"},
+                   //     new int[]{R.id.message_text, R.id.message_user}
+                //);
 
-            listView.setAdapter(adapter);
-            listView.setSelection(adapter.getCount() - 1);
+            listView.setAdapter(messageAdapter);
+            listView.setSelection(messageAdapter.getCount() - 1);
         }
 
         @Override
@@ -190,24 +193,24 @@ public class Chat extends AppCompatActivity {
 
                 for (com.google.firebase.database.DataSnapshot child2 : child.getChildren()) {
 
-                    if (child2.getKey().matches("messageText")) {
+                    if (child2.getKey().matches("messageFrom")) {
                         message.put("messageText", child2.getValue().toString());
-                    } else if (child2.getKey().matches("messageUser")) {
-                        message.put("messageUser", child2.getValue().toString());
+                    } else if (child2.getKey().matches("messageFrom")) {
+                        message.put("messageFrom", child2.getValue().toString());
 
                     }
                 }
 
-                messages.add(message);
+                messageAdapter.addMessage(message);
             }
 
             pDialog.dismiss();
 
-                adapter = new SimpleAdapter(
-                        Chat.this, messages, R.layout.message,
-                        new String[]{"messageText", "messageUser"},
-                        new int[]{R.id.message_text, R.id.message_user
-                        });
+                //adapter = new SimpleAdapter(
+//                        Chat.this, messages, R.layout.message,
+   //                     new String[]{"messageText", "messageFrom"},
+ // /  //                    new int[]{R.id.message_text, R.id.message_user
+       //                 });
 
                 //binder = new SimpleAdapter.ViewBinder() {
                 /// @Override
@@ -223,8 +226,8 @@ public class Chat extends AppCompatActivity {
 
                 //};
 
-                listView.setAdapter(adapter);
-                listView.setSelection(adapter.getCount() - 1);
+                listView.setAdapter(messageAdapter);
+                listView.setSelection(messageAdapter.getCount() - 1);
         }
 
         @Override

@@ -125,7 +125,6 @@ public class AddPokemon extends AppCompatActivity implements GoogleApiClient.OnC
         }
 
 
-
       Location location = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
 
         sLocation = String.valueOf(location.getLatitude()) + " " + String.valueOf(location.getLongitude());
@@ -179,19 +178,11 @@ public class AddPokemon extends AppCompatActivity implements GoogleApiClient.OnC
     private void addNewUser(String Pokemon, String Cp, String Location, String PublicName)
     {
         Pokemon pokemon = new Pokemon(Pokemon, Cp, Location, PublicName);
-
-
-
         String item = myRef.child("Pokemons").push().getKey();
-
         myRef.child("Pokemons").child(item).setValue(pokemon);
-
         String[] array = Location.split(" ");
-
-
-        GeoFire geoFire = new GeoFire(myRef.child("items_location"));
+        GeoFire geoFire = new GeoFire(myRef.child("Pokemons Location"));
         geoFire.setLocation(item, new GeoLocation(Double.parseDouble(array[0]) , Double.parseDouble(array[1])));
-
     }
 
 

@@ -72,9 +72,6 @@ public class TradeCenter extends Fragment{
 
     private FragmentActivity myContext;
 
-
-
-
     private OnFragmentInteractionListener mListener;
 
     public TradeCenter() {
@@ -110,7 +107,6 @@ public class TradeCenter extends Fragment{
             mParam2 = getArguments().getString(ARG_PARAM2);
 
         }
-
     }
 
     @Override
@@ -270,29 +266,21 @@ public class TradeCenter extends Fragment{
 
         }
 
-
-
-
     protected void showList()
     {
-
         try
         {
             JSONObject jsonObject = new JSONObject(myJSON);
             peoples = jsonObject.getJSONArray("result");
 
-
             for (int i = 0; i < peoples.length(); i++)
             {
-
                 JSONObject c = peoples.getJSONObject(i);
-
                 String id = c.getString("id");
                 String pokemon = c.getString("pokemon");
                 String cp = c.getString("cp");
                 String location = c.getString("location");
                 String publicName = c.getString("publicName");
-
 
                 HashMap<String, String> persons = new HashMap<String, String>();
 
@@ -301,8 +289,6 @@ public class TradeCenter extends Fragment{
                 persons.put("cp", cp);
                 persons.put("location", location);
                 persons.put("publicName", publicName);
-
-
 
                 personList.add(persons);
 
